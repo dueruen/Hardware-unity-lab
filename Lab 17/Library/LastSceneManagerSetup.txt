@@ -1,0 +1,9 @@
+sceneSetups:
+- path: Assets/PF2 og lab uge 16+17/Test-scene.unity
+  isLoaded: 1
+  isActive: 1
+  isSubScene: 0
+- path: Assets/PF2 og lab uge 16+17/Uge 17 lab.unity
+  isLoaded: 1
+  isActive: 0
+  isSubScene: 0
