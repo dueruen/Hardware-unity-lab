@@ -6,6 +6,7 @@ using System.Threading;
 public class ArduinoMain : MonoBehaviour
 {
     public Breadboard breadboard;
+    public Servo servo;
     //On included/premade Arduino functions:
     //delay(timeInMilliseconds) : use "yield return delay(timeInMilliseconds)", to get similar functionality as delay() in arduino would give you.
 
@@ -39,6 +40,12 @@ public class ArduinoMain : MonoBehaviour
         #endregion PremadeSetup
     }
 
+    bool start = true;
+    bool distanceOk = false;
+    (bool, bool, bool) goTo;
+    bool allWall = false;
+    bool forceFront = false;
+
     IEnumerator loop()
     {
         //Your code goes here:
@@ -47,33 +54,134 @@ public class ArduinoMain : MonoBehaviour
         digitalWrite(0, false);
         digitalWrite(2, false);
 
+        if (start)
+        {
+            servo.write(90);
+            yield return delay(1500);
+        }
+
         //Example analogRead:
         int ldrLeft = analogRead(4);
         int ldrRight = analogRead(5);
+        ulong dist = pulseIn(6);
+
+        if (dist > 500)
+        {
+            bool wallLeft = true;
+            bool wallRight = true;
+            bool wallFront = true;
+            if (!distanceOk)
+            {
+                servo.write(0);
+                yield return delay(1500);
+
+                Debug.Log("left: " + pulseIn(6));
+                if (pulseIn(6) > 2000 || pulseIn(6) < 10)
+                {
+                    Debug.Log("1");
+                    wallLeft = false;
+                }
+                servo.write(90);
+                yield return delay(1500);
+                Debug.Log("front: " + pulseIn(6));
+                if (pulseIn(6) > 2000 || pulseIn(6) < 10)
+                {
+                    Debug.Log("2");
+                    wallFront = false;
+                    if (pulseIn(6) == 0)
+                    {
+                        forceFront = true;
+                    }
+                }
+                servo.write(180);
+                yield return delay(1500);
+                Debug.Log("right: " + pulseIn(6));
+                if (pulseIn(6) > 2000 || pulseIn(6) < 10)
+                {
+                    Debug.Log("3");
+                    wallRight = false;
+                }
+                if (wallFront && wallLeft && wallRight)
+                {
+                    servo.write(90);
+                    yield return delay(1500);
+                    wallFront = false;
+                    wallRight = true;
+                    wallLeft = true;
+                    allWall = true;
+                }
+                else if (!wallFront)
+                {
+                    servo.write(90);
+                    yield return delay(1500);
+                }
+                else if (!wallLeft)
+                {
+                    servo.write(0);
+                    yield return delay(3000);
+                }
+
+                if (wallLeft && wallRight)
+                {
+                    Debug.Log("4");
+                    front();
+                    distanceOk = true;
+                }
+                else if (wallLeft && wallFront)
+                {
+                    Debug.Log("5");
+                    right();
+                    yield return delay(1300);
+                    stop();
+                }
+                else if (wallRight && wallFront)
+                {
+                    Debug.Log("6");
+                    left();
+                    yield return delay(1300);
+                    stop();
+                }
+                else
+                {
+                    Debug.Log("7");
+                    front();
+                    distanceOk = true;
+                }
+            }
+            if (allWall || forceFront)
+            {
+                Debug.Log("All wall!!!!!!!!!!!!");
+
+            }
+            else if (pulseIn(6) < 600)
+            {
+                Debug.Log("8!!!!!!!!!!!!");
+                distanceOk = false;
+                stop();
+            }
+        } else
+        {
+            if (ldrLeft > 600 && ldrRight > 600)
+            {
+                front();
+            }
+            else if (ldrLeft < 600)
+            {
+                left();
+            }
+            else if (ldrRight < 600)
+            {
+                right();
+            }
+            else
+            {
+                stop();
+            }
+        }
+
        // Debug.Log(value + " value at pin 5");
 
-        if (ldrLeft > 600 && ldrRight > 600)
-        {
-            analogWrite(1, 70);
-            analogWrite(3, 70);
-        }
-        else if (ldrLeft < 600)
-        {
-            analogWrite(1, 40);
-            analogWrite(2, 40);
-        }
-        else if (ldrRight < 600)
-        {
-            analogWrite(0, 40);
-            analogWrite(3, 40);
-        }
-        else
-        {
-            digitalWrite(1, false);
-            digitalWrite(3, false);
-            digitalWrite(0, false);
-            digitalWrite(2, false);
-        }
+
 
         //Your code ends here -----
 
@@ -88,12 +196,45 @@ public class ArduinoMain : MonoBehaviour
     }
 
 
+    void left()
+    {
+        analogWrite(1, 40);
+        analogWrite(2, 40);
+    }
+
+    void right()
+    {
+        analogWrite(0, 40);
+        analogWrite(3, 40);
+    }
+
+    void front()
+    {
+        analogWrite(1, 70);
+        analogWrite(3, 70);
+    }
+
+    void stop()
+    {
+        digitalWrite(1, false);
+        digitalWrite(3, false);
+        digitalWrite(0, false);
+        digitalWrite(2, false);
+    }
+
+
 
     #region PremadeDefinitions
     void Start()
     {
+        servo = FindObjectOfType<Servo>();
+        if (servo == null)
+        {
+            Debug.Log("No servo found in the scene. Consider assigning it to 'ArduinoMain.cs' manually.");
+        }
         Time.fixedDeltaTime = 0.005f; //4x physics steps of what unity normally does - to improve sensor-performance.
         StartCoroutine(setup());
+
 
     }
 
@@ -113,6 +254,17 @@ public class ArduinoMain : MonoBehaviour
         return (ulong)(Time.timeSinceLevelLoad * 1000f);
     }
 
+    public ulong abs(long x)
+    {
+        return (ulong)Mathf.Abs(x);
+    }
+
+    public long constrain(long x, long a, long b)
+    {
+        return (x < a ? a : (x > b ? b : x));
+    }
+
+
     #endregion PremadeDefinitions
 
     #region InterfacingWithBreadboard
@@ -131,6 +283,11 @@ public class ArduinoMain : MonoBehaviour
     public void digitalWrite(int pin, bool isHigh)
     {
         breadboard.digitalWrite(pin, isHigh);
+    }
+
+    public ulong pulseIn(int pin)
+    {
+        return breadboard.pulseIn(pin);
     }
     #endregion InterfacingWithBreadboard
 }

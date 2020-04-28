@@ -15,7 +15,7 @@ public class LineSensor : ArduinoObject
     void Start()
     {
         Debug.Assert(raycastTransform != null, "rayCastTransform missing from LineSensor.cs component - revert to prefab settings or assign manually");
-    } 
+    }
 
     /*
     void Update()
@@ -24,6 +24,10 @@ public class LineSensor : ArduinoObject
         Debug.Log(analogRead() + " = greyscale value");
     }
     */
+    override public ulong pulseIn()
+    {
+        throw new NotImplementedException();
+    }
     override public void analogWrite(int value)
     {
         //Not quite sure what this would/should do. It shouldn't be done.

@@ -23,7 +23,10 @@ public class HBridgePin : ArduinoObject
             hBridge = transform.GetComponentInParent<HBridge>();
         }
     }
-
+    override public ulong pulseIn()
+    {
+        throw new NotImplementedException();
+    }
     override public int analogRead()
     {
         //Not sure what reading on a H-bridge would return. Could debug a warning.

@@ -6,6 +6,7 @@ using System;
 public class Breadboard : MonoBehaviour
 {
     public ArduinoObject[] arduinoObjectPins;
+    
 
 
     public int analogRead(int pin)
@@ -40,6 +41,17 @@ public class Breadboard : MonoBehaviour
     public void digitalWrite(int pin, bool isHigh)
     {
         arduinoObjectPins[pin].digitalWrite(isHigh);
+    }
+
+    public ulong pulseIn(int pin)
+    {
+        if (!isPinAssigned(pin))
+        {
+            Debug.LogError("Attempting to write or read to unnassigned pin (Null or out of bounds of array) of index: " + pin + "\n");
+            throw new ArgumentOutOfRangeException();
+        }
+
+        return arduinoObjectPins[pin].pulseIn();
     }
 
 

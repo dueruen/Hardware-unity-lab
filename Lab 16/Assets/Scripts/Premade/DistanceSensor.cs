@@ -17,26 +17,36 @@ public class DistanceSensor : ArduinoObject
 
     private void Update()
     {
-        analogRead();
+
     }
 
-    override public int analogRead()
+
+
+    override public ulong pulseIn()
     {
         Vector3 direction = transform.right * -1;
         RaycastHit raycastHit;
         Debug.DrawRay(transform.position, direction * raycastRange, Color.blue);
 
-
         if (Physics.Raycast(transform.position, direction * raycastRange, out raycastHit, raycastMask))
         {
             distance = raycastHit.distance;
         }
+        else //Raycast hits nothing:
+        {
+            return 0;
+        }
+        
+        float time = (distance/0.034f) * 2;
 
-
-
-        return (int)distance;
+        
+        return (ulong)time;
     }
 
+    override public int analogRead()
+    {
+        throw new NotImplementedException();
+    }
     override public void analogWrite(int value)
     {
         throw new NotImplementedException();
