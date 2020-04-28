@@ -45,6 +45,13 @@ public class ArduinoMain : MonoBehaviour
     (bool, bool, bool) goTo;
     bool allWall = false;
     bool forceFront = false;
+    bool fromLdr = false;
+    bool inDist = false;
+    bool modeLeft = false;
+    bool modeRight = false;
+    bool modeFront = false;
+    bool modeBack = false;
+
 
     IEnumerator loop()
     {
@@ -55,16 +62,26 @@ public class ArduinoMain : MonoBehaviour
             start = false;
         }
 
-        stop();
-
         //Example analogRead:
         int ldrLeft = analogRead(4);
         int ldrRight = analogRead(5);
         ulong dist = pulseIn(6);
 
         Debug.Log("Ldr left: " + ldrLeft + " right: " + ldrRight + "  dist: " + dist);
-
-        if (dist != 0 && dist < 300)
+        if (fromLdr && !inDist)
+        {
+            Debug.Log("Back");
+            back();
+            yield return delay(500);
+            stop();
+            if (ldrLeft > 500 && ldrRight > 500)
+            {
+                fromLdr = false;
+                inDist = true;
+                yield return delay(500);
+            }
+        }
+        else if (dist != 0 && dist < 300)
         {
             Debug.Log("Dist ");
             bool wallLeft = true;
@@ -178,6 +195,7 @@ public class ArduinoMain : MonoBehaviour
             {
                 stop();
             }
+            fromLdr = true;
         }
 
        // Debug.Log(value + " value at pin 5");
@@ -199,20 +217,58 @@ public class ArduinoMain : MonoBehaviour
 
     void left()
     {
+        if (!modeLeft)
+        {
+            stop();
+            modeLeft = true;
+            modeRight = false;
+            modeFront = false;
+            modeBack = false;
+        }
         analogWrite(1, 30);
         analogWrite(2, 30);
     }
 
     void right()
     {
+        if (!modeRight)
+        {
+            stop();
+            modeLeft = false;
+            modeRight = true;
+            modeFront = false;
+            modeBack = false;
+        }
         analogWrite(0, 30);
         analogWrite(3, 30);
     }
 
     void front()
     {
+        if (!modeFront)
+        {
+            stop();
+            modeLeft = false;
+            modeRight = false;
+            modeFront = true;
+            modeBack = false;
+        }
         analogWrite(1, 70);
         analogWrite(3, 70);
+    }
+
+    void back()
+    {
+        if (!modeBack)
+        {
+            stop();
+            modeLeft = false;
+            modeRight = false;
+            modeFront = false;
+            modeBack = true;
+        }
+        analogWrite(0, 70);
+        analogWrite(2, 70);
     }
 
     void stop()
