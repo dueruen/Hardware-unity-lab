@@ -573,6 +573,7 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
+  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1204,6 +1205,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d30bdf2804c3ced4698de636ea373140, type: 3}
+--- !u!114 &1178615143 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9065064804751737892, guid: 55aadda775a261749bea884d8a304035,
+    type: 3}
+  m_PrefabInstance: {fileID: 1713463567}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd442d1cbc45529438d3769805e291c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1186975717
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1490,6 +1503,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Breadboard
       objectReference: {fileID: 0}
+    - target: {fileID: 5370662404424502773, guid: 4a2438fa1831aa6438fc519ba0ea26e2,
+        type: 3}
+      propertyPath: servo
+      value: 
+      objectReference: {fileID: 1178615143}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4a2438fa1831aa6438fc519ba0ea26e2, type: 3}
 --- !u!1 &1459341236

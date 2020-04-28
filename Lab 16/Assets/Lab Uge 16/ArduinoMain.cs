@@ -46,7 +46,7 @@ public class ArduinoMain : MonoBehaviour
     bool allWall = false;
     bool forceFront = false;
     bool fromLdr = false;
-    bool inDist = false;
+    bool firstDist = false;
     bool modeLeft = false;
     bool modeRight = false;
     bool modeFront = false;
@@ -68,7 +68,7 @@ public class ArduinoMain : MonoBehaviour
         ulong dist = pulseIn(6);
 
         Debug.Log("Ldr left: " + ldrLeft + " right: " + ldrRight + "  dist: " + dist);
-        if (fromLdr && !inDist)
+        if (fromLdr && firstDist)
         {
             Debug.Log("Back");
             back();
@@ -77,128 +77,132 @@ public class ArduinoMain : MonoBehaviour
             if (ldrLeft > 500 && ldrRight > 500)
             {
                 fromLdr = false;
-                inDist = true;
+                firstDist = false;
                 yield return delay(500);
             }
         }
         else if (dist != 0 && dist < 300)
         {
-            Debug.Log("Dist ");
-            bool wallLeft = true;
-            bool wallRight = true;
-            bool wallFront = true;
-            if (!distanceOk)
+            if (!fromLdr)
             {
-                servo.write(0);
-                yield return delay(1500);
-
-                Debug.Log("left: " + pulseIn(6));
-                if (pulseIn(6) > 2000 || pulseIn(6) < 10)
-                {
-                    Debug.Log("1");
-                    wallLeft = false;
-                }
-                servo.write(90);
-                yield return delay(1500);
-                Debug.Log("front: " + pulseIn(6));
-                if (pulseIn(6) > 2000 || pulseIn(6) < 10)
-                {
-                    Debug.Log("2");
-                    wallFront = false;
-                    if (pulseIn(6) == 0)
-                    {
-                        forceFront = true;
-                    }
-                }
-                servo.write(180);
-                yield return delay(1500);
-                Debug.Log("right: " + pulseIn(6));
-                if (pulseIn(6) > 2000 || pulseIn(6) < 10)
-                {
-                    Debug.Log("3");
-                    wallRight = false;
-                }
-                if (wallFront && wallLeft && wallRight)
-                {
-                    servo.write(90);
-                    yield return delay(1500);
-                    wallFront = false;
-                    wallRight = true;
-                    wallLeft = true;
-                    allWall = true;
-                }
-                else if (!wallFront)
-                {
-                    servo.write(90);
-                    yield return delay(1500);
-                }
-                else if (!wallLeft)
+                Debug.Log("Dist ");
+                bool wallLeft = true;
+                bool wallRight = true;
+                bool wallFront = true;
+                if (!distanceOk)
                 {
                     servo.write(0);
-                    yield return delay(3000);
-                }
+                    yield return delay(1500);
 
-                if (wallLeft && wallRight)
+                    Debug.Log("left: " + pulseIn(6));
+                    if (pulseIn(6) > 2000 || pulseIn(6) < 10)
+                    {
+                        Debug.Log("1");
+                        wallLeft = false;
+                    }
+                    servo.write(90);
+                    yield return delay(1500);
+                    Debug.Log("front: " + pulseIn(6));
+                    if (pulseIn(6) > 2000 || pulseIn(6) < 10)
+                    {
+                        Debug.Log("2");
+                        wallFront = false;
+                        if (pulseIn(6) == 0)
+                        {
+                            forceFront = true;
+                        }
+                    }
+                    servo.write(180);
+                    yield return delay(1500);
+                    Debug.Log("right: " + pulseIn(6));
+                    if (pulseIn(6) > 2000 || pulseIn(6) < 10)
+                    {
+                        Debug.Log("3");
+                        wallRight = false;
+                    }
+                    if (wallFront && wallLeft && wallRight)
+                    {
+                        servo.write(90);
+                        yield return delay(1500);
+                        wallFront = false;
+                        wallRight = true;
+                        wallLeft = true;
+                        allWall = true;
+                    }
+                    else if (!wallFront)
+                    {
+                        servo.write(90);
+                        yield return delay(1500);
+                    }
+                    else if (!wallLeft)
+                    {
+                        servo.write(0);
+                        yield return delay(3000);
+                    }
+
+                    if (wallLeft && wallRight)
+                    {
+                        Debug.Log("4");
+                        front();
+                        distanceOk = true;
+                    }
+                    else if (wallLeft && wallFront)
+                    {
+                        Debug.Log("5");
+                        right();
+                        yield return delay(1300);
+                        stop();
+                    }
+                    else if (wallRight && wallFront)
+                    {
+                        Debug.Log("6");
+                        left();
+                        yield return delay(1300);
+                        stop();
+                    }
+                    else
+                    {
+                        Debug.Log("7");
+                        front();
+                        distanceOk = true;
+                    }
+                }
+                if (allWall || forceFront)
                 {
-                    Debug.Log("4");
+                    Debug.Log("All wall!!!!!!!!!!!!");
+
+                }
+                else if (pulseIn(6) < 600)
+                {
+                    Debug.Log("8!!!!!!!!!!!!");
+                    distanceOk = false;
+                    stop();
+                }
+            }
+            firstDist = true;
+        } else
+            {
+                if (ldrLeft > 600 && ldrRight > 600)
+                {
+                    Debug.Log("Front");
                     front();
-                    distanceOk = true;
                 }
-                else if (wallLeft && wallFront)
+                else if (ldrLeft < 600)
                 {
-                    Debug.Log("5");
-                    right();
-                    yield return delay(1300);
-                    stop();
-                }
-                else if (wallRight && wallFront)
-                {
-                    Debug.Log("6");
                     left();
-                    yield return delay(1300);
-                    stop();
+                }
+                else if (ldrRight < 600)
+                {
+                    right();
                 }
                 else
                 {
-                    Debug.Log("7");
-                    front();
-                    distanceOk = true;
+                    stop();
                 }
+                fromLdr = true;
             }
-            if (allWall || forceFront)
-            {
-                Debug.Log("All wall!!!!!!!!!!!!");
 
-            }
-            else if (pulseIn(6) < 600)
-            {
-                Debug.Log("8!!!!!!!!!!!!");
-                distanceOk = false;
-                stop();
-            }
-        } else
-        {
-            if (ldrLeft > 600 && ldrRight > 600)
-            {
-                Debug.Log("Front");
-                front();
-            }
-            else if (ldrLeft < 600)
-            {
-                left();
-            }
-            else if (ldrRight < 600)
-            {
-                right();
-            }
-            else
-            {
-                stop();
-            }
-            fromLdr = true;
-        }
-
-       // Debug.Log(value + " value at pin 5");
+        // Debug.Log(value + " value at pin 5");
 
 
 
