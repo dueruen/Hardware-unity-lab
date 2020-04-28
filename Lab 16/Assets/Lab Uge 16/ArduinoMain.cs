@@ -51,6 +51,7 @@ public class ArduinoMain : MonoBehaviour
     bool modeRight = false;
     bool modeFront = false;
     bool modeBack = false;
+    bool modeDist = false;
 
 
     IEnumerator loop()
@@ -72,16 +73,19 @@ public class ArduinoMain : MonoBehaviour
         {
             Debug.Log("Back");
             back();
-            yield return delay(500);
+            yield return delay(400);
             stop();
-            if (ldrLeft > 500 && ldrRight > 500)
+            if (ldrLeft > 1000 && ldrRight > 1000 && dist < 295)
             {
                 fromLdr = false;
                 firstDist = false;
+                modeDist = true;
+                Debug.Log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 yield return delay(500);
             }
+            firstDist = false;
         }
-        else if (dist != 0 && dist < 300)
+        else if (modeDist || dist != 0 && dist < 300)
         {
             if (!fromLdr)
             {
