@@ -48,12 +48,6 @@ public class ArduinoMain : MonoBehaviour
 
     IEnumerator loop()
     {
-        //Your code goes here:
-        //digitalWrite(1, false);
-        //digitalWrite(3, false);
-        //digitalWrite(0, false);
-        //digitalWrite(2, false);
-
         if (start)
         {
             servo.write(90);
@@ -61,12 +55,16 @@ public class ArduinoMain : MonoBehaviour
             start = false;
         }
 
+        stop();
+
         //Example analogRead:
         int ldrLeft = analogRead(4);
         int ldrRight = analogRead(5);
         ulong dist = pulseIn(6);
 
-        if (dist > 500)
+        Debug.Log("Ldr left: " + ldrLeft + " right: " + ldrRight + "  dist: " + dist);
+
+        if (dist != 0 && dist < 300)
         {
             Debug.Log("Dist ");
             bool wallLeft = true;
@@ -163,8 +161,6 @@ public class ArduinoMain : MonoBehaviour
             }
         } else
         {
-            stop();
-            Debug.Log("Ldr left: " + ldrLeft + " right: " + ldrRight);
             if (ldrLeft > 600 && ldrRight > 600)
             {
                 Debug.Log("Front");
@@ -203,14 +199,14 @@ public class ArduinoMain : MonoBehaviour
 
     void left()
     {
-        analogWrite(1, 40);
-        analogWrite(2, 40);
+        analogWrite(1, 30);
+        analogWrite(2, 30);
     }
 
     void right()
     {
-        analogWrite(0, 40);
-        analogWrite(3, 40);
+        analogWrite(0, 30);
+        analogWrite(3, 30);
     }
 
     void front()
