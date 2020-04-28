@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
+using System;
 
 public class ArduinoMain : MonoBehaviour
 {
@@ -52,6 +53,7 @@ public class ArduinoMain : MonoBehaviour
     bool modeFront = false;
     bool modeBack = false;
     bool modeDist = false;
+    bool modeBlock = false;
 
 
     IEnumerator loop()
@@ -75,7 +77,7 @@ public class ArduinoMain : MonoBehaviour
             back();
             yield return delay(400);
             stop();
-            if (ldrLeft > 1000 && ldrRight > 1000 && dist < 295)
+            if (ldrLeft > 1000 && ldrRight > 1000 && dist < 299)
             {
                 fromLdr = false;
                 firstDist = false;
@@ -85,7 +87,7 @@ public class ArduinoMain : MonoBehaviour
             }
             firstDist = false;
         }
-        else if (modeDist || dist != 0 && dist < 300)
+        else if (modeDist || dist != 0 && dist < 299)
         {
             if (!fromLdr)
             {
@@ -164,6 +166,10 @@ public class ArduinoMain : MonoBehaviour
                         yield return delay(1300);
                         stop();
                     }
+                    else if (wallLeft && wallRight)
+                    {
+                        modeBlock = true;
+                    }
                     else
                     {
                         Debug.Log("7");
@@ -186,27 +192,22 @@ public class ArduinoMain : MonoBehaviour
             firstDist = true;
         } else
             {
-                if (ldrLeft > 600 && ldrRight > 600)
-                {
-                    Debug.Log("Front");
-                    front();
-                }
-                else if (ldrLeft < 600)
-                {
-                    left();
-                }
-                else if (ldrRight < 600)
-                {
-                    right();
-                }
-                else
-                {
-                    stop();
-                }
-                fromLdr = true;
-            }
+            int difLR = (ldrLeft - ldrRight);
+            int difRL = (ldrRight - ldrLeft);
 
-        // Debug.Log(value + " value at pin 5");
+            Debug.Log("difLR: " + difLR + "  difRL: " + difRL);
+            int leftSpeed = (ldrLeft / 4) / 4;
+            int rightSpeed = (ldrRight / 4) / 4;
+
+            if (difLR < 250 && difRL < 250)
+            {
+                leftSpeed *= 3;
+                rightSpeed *= 3;
+            }
+            analogWrite(3, leftSpeed);
+            analogWrite(1, rightSpeed);
+            fromLdr = true;
+            }
 
 
 
@@ -221,6 +222,8 @@ public class ArduinoMain : MonoBehaviour
         yield return loop();
         #endregion DoNotDelete 
     }
+
+
 
 
     void left()
