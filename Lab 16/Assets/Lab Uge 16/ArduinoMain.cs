@@ -80,8 +80,67 @@ public class ArduinoMain : MonoBehaviour
             stop();
             firstDist = false;
         }
+        else if (modeBlock)
+        {
+            Debug.Log("Block mode!!! ");
+            right();
+            yield return delay(1300);
+        }
         else if (modeDist || dist != 0 && dist < 299)
         {
+            while (modeDist)
+            {
+                Debug.Log("Dist mode going");
+                servo.write(0);
+                yield return delay(1500);
+                dist = pulseIn(6);
+                if (dist > 500  || dist == 0)
+                {
+                    left();
+                    yield return delay(900);
+                    stop();
+                }
+
+                servo.write(90);
+                yield return delay(1500);
+                dist = pulseIn(6);
+
+                if (dist > 500 || dist == 0 )
+                {
+                    front();
+                    yield return delay(1600);
+                    stop();
+                }
+
+                servo.write(180);
+                yield return delay(1500);
+                dist = pulseIn(6);
+                if (dist > 300 || dist == 0 )
+                {
+                    right();
+                    yield return delay(900);
+                    stop();
+                }
+                servo.write(90);
+                yield return delay(1500);
+
+                while ((dist > 500 || dist == 0) && (ldrLeft > 900 || ldrRight > 900))
+                {
+                    dist = pulseIn(6);
+                    ldrLeft = analogRead(4);
+                    ldrRight = analogRead(5);
+                    front();
+                    yield return delay(5);
+                    stop();
+                    Debug.Log("Ldr left: " + ldrLeft + " right: " + ldrRight + "  dist: " + dist);
+                }
+
+                if (ldrLeft < 900 || ldrRight < 900)
+                {
+                    modeDist = false;
+                }
+            }
+
             if (!fromLdr)
             {
                 Debug.Log("Dist ");
@@ -159,7 +218,7 @@ public class ArduinoMain : MonoBehaviour
                         yield return delay(1300);
                         stop();
                     }
-                    else if (wallLeft && wallRight)
+                    else if (!wallLeft && !wallRight && wallFront)
                     {
                         modeBlock = true;
                     }
