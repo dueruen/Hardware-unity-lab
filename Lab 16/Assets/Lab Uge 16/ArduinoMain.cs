@@ -56,6 +56,9 @@ public class ArduinoMain : MonoBehaviour
     bool modeBlock = false;
     bool lastGoingLeft = false;
     bool lastGoingRight = false;
+    bool blockModeGoRight = true;
+    bool blockModeGoLeft = false;
+    bool blockModeGoFront = false;
 
 
     IEnumerator loop()
@@ -83,67 +86,155 @@ public class ArduinoMain : MonoBehaviour
         else if (modeBlock)
         {
             Debug.Log("Block mode!!! ");
-            right();
-            yield return delay(1300);
-        }
-        else if (modeDist || dist != 0 && dist < 299)
-        {
-            while (modeDist)
+            if (blockModeGoRight)
             {
-                Debug.Log("Dist mode going");
-                servo.write(0);
-                yield return delay(1500);
-                dist = pulseIn(6);
-                if (dist > 500  || dist == 0)
-                {
-                    left();
-                    yield return delay(900);
-                    stop();
-                }
-
-                servo.write(90);
-                yield return delay(1500);
-                dist = pulseIn(6);
-
-                if (dist > 500 || dist == 0 )
-                {
-                    front();
-                    yield return delay(1600);
-                    stop();
-                }
-
-                servo.write(180);
-                yield return delay(1500);
-                dist = pulseIn(6);
-                if (dist > 300 || dist == 0 )
+                
+                int count = 0; 
+                while (count < 1600)
                 {
                     right();
-                    yield return delay(900);
-                    stop();
+                    yield return delay(100);
+                    count += 100;
                 }
-                servo.write(90);
-                yield return delay(1500);
+                //yield return delay(1500); 
+                stop();
+                blockModeGoRight = false;
+                blockModeGoFront = true;
+            } else if (blockModeGoFront)
+            {
 
-                while ((dist > 500 || dist == 0) && (ldrLeft > 900 || ldrRight > 900))
+                while (true)
                 {
                     dist = pulseIn(6);
-                    ldrLeft = analogRead(4);
-                    ldrRight = analogRead(5);
+                    if (dist == 0 || dist > 600)
+                    {
+                        Debug.Log("STOP FRONT: " + dist);
+                        yield return delay(900);
+                        stop();
+                        blockModeGoFront = false;
+                        blockModeGoLeft = true;
+                        yield return delay(1500);
+                        break;
+                    }
                     front();
-                    yield return delay(5);
-                    stop();
-                    Debug.Log("Ldr left: " + ldrLeft + " right: " + ldrRight + "  dist: " + dist);
+                    yield return delay(100);
+                }
+            } else if (blockModeGoLeft)
+            {
+                bool first = true;
+
+                int count = 0;
+                while (count < 1600)
+                {
+                    left();
+                    yield return delay(100);
+                    count += 100;
                 }
 
-                if (ldrLeft < 900 || ldrRight < 900)
+                while (true)
                 {
-                    modeDist = false;
+                    ldrLeft = analogRead(4);
+                    ldrRight = analogRead(5);
+                    dist = pulseIn(6);
+                    if (ldrLeft < 700 || ldrRight < 700)
+                    {
+                        servo.write(90);
+                        yield return delay(600);
+                        stop();
+                        int c = 0;
+                        while (c < 1600)
+                        {
+                            right();
+                            yield return delay(100);
+                            c += 100;
+                        }
+                        stop();
+                        modeBlock = false;
+                        modeDist = false;
+                        firstDist = false;
+                        fromLdr = false;
+                        break;
+                    }
+                    if (!first && dist == 0 || dist > 600)
+                    {
+                        Debug.Log("STOP FRONT: " + dist);
+                        yield return delay(900);
+                        stop();
+                        blockModeGoFront = false;
+                        blockModeGoLeft = true;
+                        yield return delay(1500);
+                        break;
+                    }
+                    else if (dist != 0 && dist < 600)
+                    {
+                        first = false;
+                    }
+                    front();
+                    yield return delay(10);
                 }
             }
 
+        }
+        else if (modeDist || (dist != 0 && dist < 299))
+        {
+            //while (modeDist)
+            //{
+            //    Debug.Log("Dist mode going");
+            //    servo.write(0);
+            //    yield return delay(1500);
+            //    dist = pulseIn(6);
+            //    if (dist > 500  || dist == 0)
+            //    {
+            //        left();
+            //        yield return delay(900);
+            //        stop();
+            //    }
+
+            //    servo.write(90);
+            //    yield return delay(1500);
+            //    dist = pulseIn(6);
+
+            //    if (dist > 500 || dist == 0 )
+            //    {
+            //        front();
+            //        yield return delay(1600);
+            //        stop();
+            //    }
+
+            //    servo.write(180);
+            //    yield return delay(1500);
+            //    dist = pulseIn(6);
+            //    if (dist > 300 || dist == 0 )
+            //    {
+            //        right();
+            //        yield return delay(900);
+            //        stop();
+            //    }
+            //    servo.write(90);
+            //    yield return delay(1500);
+
+            //    while ((dist > 500 || dist == 0) && (ldrLeft > 900 || ldrRight > 900))
+            //    {
+            //        dist = pulseIn(6);
+            //        ldrLeft = analogRead(4);
+            //        ldrRight = analogRead(5);
+            //        front();
+            //        yield return delay(5);
+            //        stop();
+            //        Debug.Log("Ldr left: " + ldrLeft + " right: " + ldrRight + "  dist: " + dist);
+            //    }
+
+            //    if (ldrLeft < 900 || ldrRight < 900)
+            //    {
+            //        modeDist = false;
+            //    }
+            //}
+
             if (!fromLdr)
             {
+                Debug.Log("Ldr left: " + ldrLeft + " right: " + ldrRight + "  dist: " + dist);
                 Debug.Log("Dist ");
+                yield return delay(1500);
                 bool wallLeft = true;
                 bool wallRight = true;
                 bool wallFront = true;
@@ -153,7 +244,8 @@ public class ArduinoMain : MonoBehaviour
                     yield return delay(1500);
 
                     Debug.Log("left: " + pulseIn(6));
-                    if (pulseIn(6) > 2000 || pulseIn(6) < 10)
+                    //if (pulseIn(6) > 1000 || pulseIn(6) < 10)
+                    if (pulseIn(6) > 1000 || pulseIn(6) < 10)
                     {
                         Debug.Log("1");
                         wallLeft = false;
@@ -161,7 +253,7 @@ public class ArduinoMain : MonoBehaviour
                     servo.write(90);
                     yield return delay(1500);
                     Debug.Log("front: " + pulseIn(6));
-                    if (pulseIn(6) > 2000 || pulseIn(6) < 10)
+                    if (pulseIn(6) > 1000 || pulseIn(6) < 10)
                     {
                         Debug.Log("2");
                         wallFront = false;
@@ -173,7 +265,7 @@ public class ArduinoMain : MonoBehaviour
                     servo.write(180);
                     yield return delay(1500);
                     Debug.Log("right: " + pulseIn(6));
-                    if (pulseIn(6) > 2000 || pulseIn(6) < 10)
+                    if (pulseIn(6) > 1000 || pulseIn(6) < 10)
                     {
                         Debug.Log("3");
                         wallRight = false;
@@ -315,6 +407,14 @@ public class ArduinoMain : MonoBehaviour
         analogWrite(3, leftSpeed);
         analogWrite(1, rightSpeed);
         fromLdr = true;
+
+        if (ldrLeft < 350 && ldrRight < 350)
+        {
+            stop();
+            Debug.Log("STTTTTTTTTTTTTTTTTTTTTPPPPPPPPPPPPPPPPPPPPSSSSSSSSSSSSSS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            modeDist = true;
+            return;
+        }
     }
 
 
