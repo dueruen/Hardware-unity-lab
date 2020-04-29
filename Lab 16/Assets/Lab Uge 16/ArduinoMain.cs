@@ -54,6 +54,8 @@ public class ArduinoMain : MonoBehaviour
     bool modeBack = false;
     bool modeDist = false;
     bool modeBlock = false;
+    bool lastGoingLeft = false;
+    bool lastGoingRight = false;
 
 
     IEnumerator loop()
@@ -73,18 +75,9 @@ public class ArduinoMain : MonoBehaviour
         Debug.Log("Ldr left: " + ldrLeft + " right: " + ldrRight + "  dist: " + dist);
         if (fromLdr && firstDist)
         {
-            Debug.Log("Back");
-            back();
-            yield return delay(400);
+            align();
+            yield return delay(50);
             stop();
-            if (ldrLeft > 1000 && ldrRight > 1000 && dist < 299)
-            {
-                fromLdr = false;
-                firstDist = false;
-                modeDist = true;
-                Debug.Log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                yield return delay(500);
-            }
             firstDist = false;
         }
         else if (modeDist || dist != 0 && dist < 299)
@@ -191,25 +184,9 @@ public class ArduinoMain : MonoBehaviour
             }
             firstDist = true;
         } else
-            {
-            int difLR = (ldrLeft - ldrRight);
-            int difRL = (ldrRight - ldrLeft);
-
-            Debug.Log("difLR: " + difLR + "  difRL: " + difRL);
-            int leftSpeed = (ldrLeft / 4) / 4;
-            int rightSpeed = (ldrRight / 4) / 4;
-
-            if (difLR < 250 && difRL < 250)
-            {
-                leftSpeed *= 3;
-                rightSpeed *= 3;
-            }
-            analogWrite(3, leftSpeed);
-            analogWrite(1, rightSpeed);
-            fromLdr = true;
-            }
-
-
+        {
+            followLine();
+        }
 
         //Your code ends here -----
 
@@ -223,7 +200,63 @@ public class ArduinoMain : MonoBehaviour
         #endregion DoNotDelete 
     }
 
+    void align()
+    {
+        Debug.Log("ALIGN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        int ldrRight = analogRead(5);
+        int ldrLeft = analogRead(4);
+        if (lastGoingLeft)
+        {
+            left();
+            if (ldrRight < 500)
+            {
+                fromLdr = false;
+                firstDist = false;
+                modeDist = true;
+            }
+        }
+        else if (lastGoingRight)
+        {
+            right();
+            if (ldrRight < 500)
+            {
+                fromLdr = false;
+                firstDist = false;
+                modeDist = true;
+            }
+        }
+    }
 
+    void followLine()
+    {
+        int ldrRight = analogRead(5);
+        int ldrLeft = analogRead(4);
+        int difLR = (ldrLeft - ldrRight);
+        int difRL = (ldrRight - ldrLeft);
+
+        int leftSpeed = (ldrLeft / 4) / 4;
+        int rightSpeed = (ldrRight / 4) / 4;
+
+        if (difLR < 200 && difRL < 200)
+        {
+            leftSpeed *= 3;
+            rightSpeed *= 3;
+        }
+        else if (difRL > difLR)
+        {
+            lastGoingLeft = true;
+            lastGoingRight = false;
+        }
+        else if (difRL < difLR)
+        {
+            lastGoingRight = true;
+            lastGoingLeft = false;
+        }
+
+        analogWrite(3, leftSpeed);
+        analogWrite(1, rightSpeed);
+        fromLdr = true;
+    }
 
 
     void left()
@@ -266,20 +299,6 @@ public class ArduinoMain : MonoBehaviour
         }
         analogWrite(1, 70);
         analogWrite(3, 70);
-    }
-
-    void back()
-    {
-        if (!modeBack)
-        {
-            stop();
-            modeLeft = false;
-            modeRight = false;
-            modeFront = false;
-            modeBack = true;
-        }
-        analogWrite(0, 70);
-        analogWrite(2, 70);
     }
 
     void stop()
