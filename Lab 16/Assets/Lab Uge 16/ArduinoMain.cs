@@ -53,22 +53,25 @@ public class ArduinoMain : MonoBehaviour
     bool modeFront = false;
     bool modeBack = false;
     bool modeDist = false;
-    bool modeBlock = false;
     bool lastGoingLeft = false;
     bool lastGoingRight = false;
-    bool blockModeGoRight = true;
-    bool blockModeGoLeft = false;
-    bool blockModeGoFront = false;
-
+    bool rightAvailable = false;
+    bool leftAvailable = false;
+    bool passedObstacle = false;
+    bool ostacleFound = false;
+    int ostaclesPassed = 0;
 
     IEnumerator loop()
     {
         if (start)
         {
+
             servo.write(90);
             yield return delay(1500);
             start = false;
+            fromLdr = true;
         }
+
 
         //Example analogRead:
         int ldrLeft = analogRead(4);
@@ -83,260 +86,135 @@ public class ArduinoMain : MonoBehaviour
             stop();
             firstDist = false;
         }
-        else if (modeBlock)
+        else if (fromLdr)
         {
-            Debug.Log("Block mode!!! ");
-            if (blockModeGoRight)
+            align();
+            followLine();
+        }
+        else if (modeDist)
+        {
+            dist = pulseIn(6);
+            while (dist > 300 || dist == 0)
             {
-                
-                int count = 0; 
-                while (count < 1600)
-                {
-                    right();
-                    yield return delay(100);
-                    count += 100;
-                }
-                //yield return delay(1500); 
+                front();
+                yield return delay(2);
+                dist = pulseIn(6);
+            }
+
+            stop();
+            //check right 
+            servo.write(180);
+            yield return delay(1500);
+            dist = pulseIn(6);
+            if (dist > 1000 || dist == 0)
+            {
+                rightAvailable = true;
+                Debug.Log("right is available");
+            }
+
+
+            //check left
+            servo.write(0);
+            yield return delay(3000);
+            dist = pulseIn(6);
+            if (dist > 800 || dist == 0)
+            {
+                leftAvailable = true;
+                Debug.Log("Left is available");
+            }
+
+            if (rightAvailable && ostaclesPassed < 1)
+            {
+                right();
+                yield return delay(1400);
                 stop();
-                blockModeGoRight = false;
-                blockModeGoFront = true;
-            } else if (blockModeGoFront)
-            {
-
-                while (true)
+                dist = pulseIn(6);
+                while (dist < 350 && dist != 0)
                 {
-                    dist = pulseIn(6);
-                    if (dist == 0 || dist > 600)
-                    {
-                        Debug.Log("STOP FRONT: " + dist);
-                        yield return delay(900);
-                        stop();
-                        blockModeGoFront = false;
-                        blockModeGoLeft = true;
-                        yield return delay(1500);
-                        break;
-                    }
+                    Debug.Log("i am in the loop");
                     front();
-                    yield return delay(100);
+                    yield return delay(2);
+                    dist = pulseIn(6);
                 }
-            } else if (blockModeGoLeft)
-            {
-                bool first = true;
 
-                int count = 0;
-                while (count < 1600)
+                yield return delay(900);
+                stop();
+                left();
+                yield return delay(1600);
+
+                while (!passedObstacle)
                 {
-                    left();
-                    yield return delay(100);
-                    count += 100;
-                }
+                    front();
+                    yield return delay(2);
+                    dist = pulseIn(6);
 
-                while (true)
+                    if (dist < 300 && dist != 0)
+                    {
+                        ostacleFound = true;
+                    }
+
+                    if (ostacleFound && (dist > 300 || dist == 0))
+                    {
+                        passedObstacle = true;
+                    }
+
+                }
+                yield return delay(900);
+                stop();
+                left();
+                servo.write(90);
+                yield return delay(1600);
+                front();
+                yield return delay(2);
+
+                while (ldrLeft > 900 || ldrRight > 900)
                 {
                     ldrLeft = analogRead(4);
                     ldrRight = analogRead(5);
-                    dist = pulseIn(6);
-                    if (ldrLeft < 700 || ldrRight < 700)
-                    {
-                        servo.write(90);
-                        yield return delay(600);
-                        stop();
-                        int c = 0;
-                        while (c < 1600)
-                        {
-                            right();
-                            yield return delay(100);
-                            c += 100;
-                        }
-                        stop();
-                        modeBlock = false;
-                        modeDist = false;
-                        firstDist = false;
-                        fromLdr = false;
-                        break;
-                    }
-                    if (!first && dist == 0 || dist > 600)
-                    {
-                        Debug.Log("STOP FRONT: " + dist);
-                        yield return delay(900);
-                        stop();
-                        blockModeGoFront = false;
-                        blockModeGoLeft = true;
-                        yield return delay(1500);
-                        break;
-                    }
-                    else if (dist != 0 && dist < 600)
-                    {
-                        first = false;
-                    }
-                    front();
-                    yield return delay(10);
+                    Debug.Log("Last loop");
+                    yield return delay(2);
                 }
+
+                yield return delay(200);
+                stop();
+                ldrLeft = analogRead(4);
+                while (ldrLeft > 900)
+                {
+                    right();
+                    yield return delay(2);
+                    ldrLeft = analogRead(4);
+                }
+
+                modeDist = false;
+                fromLdr = true;
+                Debug.Log("I am done");
+                rightAvailable = false;
+                leftAvailable = false;
+                ostaclesPassed++;
+
+
             }
 
-        }
-        else if (modeDist || (dist != 0 && dist < 299))
-        {
-            //while (modeDist)
-            //{
-            //    Debug.Log("Dist mode going");
-            //    servo.write(0);
-            //    yield return delay(1500);
-            //    dist = pulseIn(6);
-            //    if (dist > 500  || dist == 0)
-            //    {
-            //        left();
-            //        yield return delay(900);
-            //        stop();
-            //    }
-
-            //    servo.write(90);
-            //    yield return delay(1500);
-            //    dist = pulseIn(6);
-
-            //    if (dist > 500 || dist == 0 )
-            //    {
-            //        front();
-            //        yield return delay(1600);
-            //        stop();
-            //    }
-
-            //    servo.write(180);
-            //    yield return delay(1500);
-            //    dist = pulseIn(6);
-            //    if (dist > 300 || dist == 0 )
-            //    {
-            //        right();
-            //        yield return delay(900);
-            //        stop();
-            //    }
-            //    servo.write(90);
-            //    yield return delay(1500);
-
-            //    while ((dist > 500 || dist == 0) && (ldrLeft > 900 || ldrRight > 900))
-            //    {
-            //        dist = pulseIn(6);
-            //        ldrLeft = analogRead(4);
-            //        ldrRight = analogRead(5);
-            //        front();
-            //        yield return delay(5);
-            //        stop();
-            //        Debug.Log("Ldr left: " + ldrLeft + " right: " + ldrRight + "  dist: " + dist);
-            //    }
-
-            //    if (ldrLeft < 900 || ldrRight < 900)
-            //    {
-            //        modeDist = false;
-            //    }
-            //}
-
-            if (!fromLdr)
+            if (rightAvailable && ostaclesPassed >= 1)
             {
-                Debug.Log("Ldr left: " + ldrLeft + " right: " + ldrRight + "  dist: " + dist);
-                Debug.Log("Dist ");
+                right();
+                servo.write(90);
                 yield return delay(1500);
-                bool wallLeft = true;
-                bool wallRight = true;
-                bool wallFront = true;
-                if (!distanceOk)
-                {
-                    servo.write(0);
-                    yield return delay(1500);
+                rightAvailable = false;
+                leftAvailable = false;
 
-                    Debug.Log("left: " + pulseIn(6));
-                    //if (pulseIn(6) > 1000 || pulseIn(6) < 10)
-                    if (pulseIn(6) > 1000 || pulseIn(6) < 10)
-                    {
-                        Debug.Log("1");
-                        wallLeft = false;
-                    }
-                    servo.write(90);
-                    yield return delay(1500);
-                    Debug.Log("front: " + pulseIn(6));
-                    if (pulseIn(6) > 1000 || pulseIn(6) < 10)
-                    {
-                        Debug.Log("2");
-                        wallFront = false;
-                        if (pulseIn(6) == 0)
-                        {
-                            forceFront = true;
-                        }
-                    }
-                    servo.write(180);
-                    yield return delay(1500);
-                    Debug.Log("right: " + pulseIn(6));
-                    if (pulseIn(6) > 1000 || pulseIn(6) < 10)
-                    {
-                        Debug.Log("3");
-                        wallRight = false;
-                    }
-                    if (wallFront && wallLeft && wallRight)
-                    {
-                        servo.write(90);
-                        yield return delay(1500);
-                        wallFront = false;
-                        wallRight = true;
-                        wallLeft = true;
-                        allWall = true;
-                    }
-                    else if (!wallFront)
-                    {
-                        servo.write(90);
-                        yield return delay(1500);
-                    }
-                    else if (!wallLeft)
-                    {
-                        servo.write(0);
-                        yield return delay(3000);
-                    }
-
-                    if (wallLeft && wallRight)
-                    {
-                        Debug.Log("4");
-                        front();
-                        distanceOk = true;
-                    }
-                    else if (wallLeft && wallFront)
-                    {
-                        Debug.Log("5");
-                        right();
-                        yield return delay(1300);
-                        stop();
-                    }
-                    else if (wallRight && wallFront)
-                    {
-                        Debug.Log("6");
-                        left();
-                        yield return delay(1300);
-                        stop();
-                    }
-                    else if (!wallLeft && !wallRight && wallFront)
-                    {
-                        modeBlock = true;
-                    }
-                    else
-                    {
-                        Debug.Log("7");
-                        front();
-                        distanceOk = true;
-                    }
-                }
-                if (allWall || forceFront)
-                {
-                    Debug.Log("All wall!!!!!!!!!!!!");
-
-                }
-                else if (pulseIn(6) < 600)
-                {
-                    Debug.Log("8!!!!!!!!!!!!");
-                    distanceOk = false;
-                    stop();
-                }
             }
-            firstDist = true;
-        } else
-        {
-            followLine();
+
+            if (leftAvailable)
+            {
+                Debug.Log("left!");
+                left();
+                servo.write(90);
+                yield return delay(1800);
+                leftAvailable = false;
+                rightAvailable = false;
+
+            }  
         }
 
         //Your code ends here -----
@@ -384,6 +262,7 @@ public class ArduinoMain : MonoBehaviour
         int ldrLeft = analogRead(4);
         int difLR = (ldrLeft - ldrRight);
         int difRL = (ldrRight - ldrLeft);
+        ulong dist = pulseIn(6);
 
         int leftSpeed = (ldrLeft / 4) / 4;
         int rightSpeed = (ldrRight / 4) / 4;
@@ -408,10 +287,10 @@ public class ArduinoMain : MonoBehaviour
         analogWrite(1, rightSpeed);
         fromLdr = true;
 
-        if (ldrLeft < 350 && ldrRight < 350)
+        if ((ldrLeft < 350 && ldrRight < 350) || (dist < 250 && dist != 0))
         {
             stop();
-            Debug.Log("STTTTTTTTTTTTTTTTTTTTTPPPPPPPPPPPPPPPPPPPPSSSSSSSSSSSSSS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            fromLdr = false;
             modeDist = true;
             return;
         }
